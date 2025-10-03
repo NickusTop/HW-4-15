@@ -7,9 +7,32 @@ import "@pnotify/core/dist/BrightTheme.css";
 const countriesTemplate = Handlebars.compile(`
   <ul>
     {{#each this}}
-      <li>{{name.common}} - {{region}}</li>
+      <li>{{name.common}}</li>
     {{/each}}
   </ul>
+`);
+
+const countryTemplate = Handlebars.compile(`
+ <ul style="display: flex;">
+    {{#each this}}
+      <ul class="country-card">
+        <li class="li-card li-card-name">{{name.common}}</li>
+        <li class="li-card">Capital: <p class="p-card">{{capital}}</p></li>
+        <li class="li-card">Population: <p class="p-card">{{population}}</p></li>
+        <li class="li-card li-card-languages">
+          Languages:
+          <ul class="languages-list"></ul>
+        </li>
+      </ul>
+      <img src={{flags.png}} alt="flag" class="flag-img"/>
+    {{/each}}
+  </ul>
+`);
+
+const languagesTemplate = Handlebars.compile(`
+  {{#each this}}
+    <li>{{this}}</li>
+  {{/each}}
 `);
 
 const searchInput = document.querySelector(".search-input");
@@ -26,8 +49,7 @@ function onSearch(e) {
       text: "Напишіть правильну назву країни!",
       delay: 2000,
       hide: true,
-      animateSpeed: "normal",
-      modules: new Map([[PNotifyButtons, { closer: true, sticker: false }]]),
+      animateSpeed: "normal"
     });
     return;
   }
@@ -44,19 +66,34 @@ function getCountries(name) {
     .then((countries) => {
       renderCountries(countries);
     })
-    .catch((error) => {
-      ulCountries.innerHTML = "<li>Помилка завантаження даних</li>";
-      alert({
+    .catch(() => {
+      error({
         text: "Сталася помилка при завантаженні даних!",
         type: "error",
         delay: 2000,
         hide: true,
-        animateSpeed: "normal",
-        modules: new Map([[PNotifyButtons, { closer: true, sticker: false }]]),
+        animateSpeed: "normal"
       });
     });
 }
 
 function renderCountries(countries) {
-  ulCountries.innerHTML = countriesTemplate(countries);
+  if (countries.length > 10) {
+    ulCountries.innerHTML = "";
+    error({
+      text: "Забагато результатів! Введіть більш конкретну назву",
+      delay: 2000,
+      hide: true,
+      animateSpeed: "normal",
+    });
+    return;
+  } else if (countries.length === 1) {
+    ulCountries.innerHTML = countryTemplate(countries);
+    const languagesList = document.querySelector(".languages-list");
+    const langs = [];
+    for (let key in countries[0].languages) {
+      langs.push(countries[0].languages[key]);
+    }
+    languagesList.innerHTML = languagesTemplate(langs);
+  }
 }
